@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RV32IMFC RISC-V CPU Implementation</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+    h1, h2, h3 {
+      color: #222;
+    }
+    code, pre {
+      background-color: #eee;
+      padding: 4px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+      display: inline-block;
+    }
+    pre {
+      display: block;
+      padding: 10px;
+      overflow-x: auto;
+    }
+    ul {
+      list-style-type: square;
+    }
+    .section {
+      margin-bottom: 40px;
+    }
+  </style>
+</head>
+<body>
+  <h1>RV32IMFC RISC-V CPU Implementation</h1>
+  <p>A RISC-V CPU implementation supporting the RV32I base instruction set with focus on fundamental operations.</p>
+
+  <div class="section">
+    <h2>Detailed CPU Capabilities</h2>
+    <h3>Fully Implemented Features ✅</h3>
+    <ul>
+      <li><strong>Arithmetic Operations</strong>: add, addi, register-to-register, immediate operations</li>
+      <li><strong>Memory Operations</strong>: sw, word-aligned, up to ~24 bytes confirmed</li>
+      <li><strong>Register Operations</strong>: 32 registers, x0 hardwired to zero, updates working</li>
+      <li><strong>Control Flow</strong>: PC increment, sequential execution</li>
+      <li><strong>Instruction Fetch</strong>: loading, decoding</li>
+    </ul>
+
+    <h3>Limitations and Untested Features ⚠️</h3>
+    <ul>
+      <li>Branch/jump instructions not fully tested</li>
+      <li>lw not extensively tested</li>
+      <li>Large programs may need more simulation time</li>
+      <li>M, F, C extensions not implemented</li>
+      <li>CSR, exceptions, and env calls not implemented</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>Directory Structure</h2>
+    <pre>RV32IMFC/
+├── src/
+│   ├── core/
+│   ├── memory/
+│   └── testbench/
+├── tests/
+│   ├── asm/
+│   └── hex/
+├── tools/
+├── build/
+├── docs/
+└── test.hex -&gt; tests/hex/current.hex</pre>
+  </div>
+
+  <div class="section">
+    <h2>Installation & Setup</h2>
+    <h3>Prerequisites</h3>
+    <pre># Ubuntu/Debian
+sudo apt install iverilog gcc-riscv64-unknown-elf gtkwave
+
+# Fedora
+sudo dnf install iverilog riscv64-unknown-elf-gcc gtkwave
+
+# macOS
+brew install icarus-verilog riscv-gnu-toolchain gtkwave</pre>
+  </div>
+
+  <div class="section">
+    <h2>Usage</h2>
+    <h3>Running the Simulation</h3>
+    <pre>./tools/compile.sh</pre>
+
+    <h3>Viewing Waveforms</h3>
+    <pre>gtkwave build/waveform.vcd</pre>
+
+    <h3>Creating and Running Custom Code</h3>
+    <h4>Step 1: Write your RISC-V Assembly Program</h4>
+    <pre>.section .text
+.globl _start
+
+_start:
+    addi x1, x0, 10
+    addi x2, x0, 5
+    add x3, x1, x2
+    sw x3, 0(x0)
+
+loop:
+    j loop</pre>
+
+    <h4>Step 2: Compile Assembly to Hex Format</h4>
+    <pre>riscv32-unknown-elf-gcc -march=rv32i -mabi=ilp32 -nostdlib -nostartfiles \
+  -T tools/link.ld tests/asm/example.S -o tests/asm/example.elf
+
+riscv32-unknown-elf-objcopy -O binary tests/asm/example.elf tests/asm/example.bin
+
+hexdump -v -e '1/4 "%08x\n"' tests/asm/example.bin > tests/hex/example.hex</pre>
+
+    <h4>Step 3: Set as Current Test Program</h4>
+    <pre>ln -sf tests/hex/example.hex test.hex</pre>
+
+    <h4>Step 4: Run the Simulation</h4>
+    <pre>./tools/compile.sh</pre>
+  </div>
+
+  <div class="section">
+    <h3>Example Programs</h3>
+    <h4>Fibonacci Sequence Generator</h4>
+    <pre>addi x1, x0, 0
+addi x2, x0, 1
+addi x3, x0, 0
+
+sw x1, 0(x3)
+addi x3, x3, 4
+sw x2, 0(x3)
+addi x3, x3, 4
+
+add x4, x1, x2
+sw x4, 0(x3)
+addi x3, x3, 4
+addi x1, x2, 0
+addi x2, x4, 0
+
+add x4, x1, x2
+sw x4, 0(x3)
+addi x3, x3, 4
+addi x1, x2, 0
+addi x2, x4, 0</pre>
+  </div>
+
+  <div class="section">
+    <h2>Troubleshooting</h2>
+    <ul>
+      <li><strong>"Not enough words" warning</strong>: Normal for small programs</li>
+      <li><strong>Premature simulation end</strong>: Increase delay in <code>tb_riscv_cpu.v</code></li>
+      <li><strong>Incorrect memory</strong>: Check addressing and word-alignment</li>
+      <li><strong>Compile errors</strong>: Check Verilog syntax and file paths</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>Future Enhancements</h2>
+    <ul>
+      <li>Branch/jump implementation</li>
+      <li>lw and other loads</li>
+      <li>M-extension support</li>
+      <li>CSR/system instruction support</li>
+      <li>Interrupt and exception handling</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>Credits</h2>
+    <p>Developed by GaragaKarthikeya</p>
+  </div>
+</body>
+</html>
