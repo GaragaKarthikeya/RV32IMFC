@@ -87,7 +87,17 @@ module control_unit (
     always @(*) begin
         case(alu_op)
             2'b00: alu_control = 4'b0000; // ADD for loads/stores
-            2'b01: alu_control = 4'b0001; // SUB for branches
+            2'b01: begin // Branch instructions
+                case(funct3)
+                    3'b000: alu_control = 4'b1010; // BEQ
+                    3'b001: alu_control = 4'b1011; // BNE
+                    3'b100: alu_control = 4'b1100; // BLT
+                    3'b101: alu_control = 4'b1101; // BGE
+                    3'b110: alu_control = 4'b1110; // BLTU
+                    3'b111: alu_control = 4'b1111; // BGEU
+                    default: alu_control = 4'b1010; // Default to BEQ
+                endcase
+            end
             2'b10: begin // R-type or I-type ALU
                 case(funct3)
                     3'b000: begin

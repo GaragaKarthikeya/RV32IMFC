@@ -27,6 +27,7 @@ module riscv_cpu (
     wire [1:0] alu_op;
     wire [3:0] alu_control;
     wire zero_flag;
+    wire branch_result;    // New wire for branch condition result
     wire pc_src;
     
     // Program Counter
@@ -94,7 +95,8 @@ module riscv_cpu (
         .b(alu_input2),
         .alu_control(alu_control),
         .result(alu_result),
-        .zero(zero_flag)
+        .zero(zero_flag),
+        .branch_result(branch_result)    // Connect the branch_result output
     );
     
     // Data Memory
@@ -110,8 +112,8 @@ module riscv_cpu (
     // Write back mux
     assign write_data = mem_to_reg ? read_data_mem : alu_result;
     
-    // Branch logic
-    assign pc_src = branch & zero_flag;
+    // Branch logic - use branch_result instead of zero_flag
+    assign pc_src = branch & branch_result;
     assign pc_next = pc_src ? (pc_current + imm_extended) : (pc_current + 4);
     
     // Output
